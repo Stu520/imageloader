@@ -1,0 +1,88 @@
+ 使用步骤:
+	1. 添加依赖: compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+	2. 添加权限:
+	
+		-　<uses-permission android:name="android.permission.INTERNET" />
+		
+		-　<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	3. 在Application或Activity中进行初始化配置
+	
+			// ImageLoaderConfiguration 详细配置
+			File cacheDir = StorageUtils.getOwnCacheDirectory(getApplicationContext(), "imageloader/Cache"); // 自定义缓存文件夹
+			ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(context)
+			     .memoryCacheExtraOptions(480, 800) // 指定缓存到内存时图片的大小,默认是屏幕尺寸的长宽
+			     .diskCacheExtraOptions(480, 800, null) // 指定缓存到硬盘时图片的大小,并不建议使用
+			     .taskExecutor(new Executor()) // 自定义一个线程来加载和显示图片
+			     .taskExecutorForCachedImages(new Executor())// 自定义一个线程来缓存图片
+			     .threadPoolSize(3) // default, 指定线程池大小
+			     .threadPriority(Thread.NORM_PRIORITY - 2) // default ,指定线程优先级 
+			     .tasksProcessingOrder(QueueProcessingType.FIFO) // default , 指定加载显示图片的任务队列的类型
+			     .denyCacheImageMultipleSizesInMemory() // 禁止在内存中缓存同一张图片的多个尺寸类型
+			     .memoryCache(new LruMemoryCache(2 * 1024 * 1024)) // 指定内存缓存的大小,默认值为1/8 应用的最大可用内存
+			     .memoryCacheSize(2 * 1024 * 1024) 
+			     .memoryCacheSizePercentage(13) // default
+			     .diskCache(new UnlimitedDiskCache(cacheDir)) // default , 指定硬盘缓存的地址
+			     .diskCacheSize(50 * 1024 * 1024) // 指定硬盘缓存的大小
+			     .diskCacheFileCount(100) // 指定硬盘缓存的文件个数
+			     .diskCacheFileNameGenerator(new HashCodeFileNameGenerator()) // default , 指定硬盘缓存时文件名的生成器
+			     .imageDownloader(new BaseImageDownloader(context)) // default , 指定图片下载器
+			     .imageDecoder(new BaseImageDecoder()) // default , 指定图片解码器
+			     .defaultDisplayImageOptions(DisplayImageOptions.createSimple()) // default , 指定图片显示的配置
+			     .writeDebugLogs() // 是否显示Log
+			     .build();
+
+			// ImageLoaderConfiguration 简单初始化
+			ImageLoaderConfiguration configuration = ImageLoaderConfiguration.createDefault(this);
+			// 初始化配置
+			ImageLoader.getInstance().init(configuration);  
+
+	4. DisplayImageOptions 参数详解:
+
+			DisplayImageOptions options = new DisplayImageOptions.Builder()
+				.showImageOnLoading(R.drawable.ic_stub) // 图片正在加载时显示的图片资源ID
+				.showImageForEmptyUri(R.drawable.ic_empty) // URI为空时显示的图片资源ID
+				.showImageOnFail(R.drawable.ic_error) // 图片加载失败时显示的图片资源ID
+				.resetViewBeforeLoading(false)  // default 图片在下载前是否重置,复位
+				.delayBeforeLoading(1000) // 图片开始加载前的延时.默认是0
+				.cacheInMemory(false) // default , 是否缓存在内存中, 默认不缓存
+				.cacheOnDisk(false) // default , 是否缓存在硬盘 , 默认不缓存
+				.preProcessor(new BitmapProcessor) // 设置图片缓存在内存前的图片处理器
+				.postProcessor(new BitmapProcessor) // 设置图片在缓存到内存以后 , 显示在界面之前的图片处理器
+				.extraForDownloader(...) // 为图片下载设置辅助参数
+				.considerExifParams(false) // default , 设置是否考虑JPEG图片的EXIF参数信息,默认不考虑
+				.imageScaleType(ImageScaleType.IN_SAMPLE_POWER_OF_2) // default , 指定图片缩放的方式,ListView/GridView/Gallery推荐使用此默认值
+				.bitmapConfig(Bitmap.Config.ARGB_8888) // default , 指定图片的质量,默认是 ARGB_8888
+				.decodingOptions(...) // 指定图片的解码方式
+				.displayer(new SimpleBitmapDisplayer()) // default , 设置图片显示的方式,用于自定义
+				.handler(new Handler()) // default ,设置图片显示的方式和ImageLoadingListener的监听, 用于自定义
+				.build();
+
+	5. 显示图片的方法:
+
+			ImageLoader.getInstance().loadImage(String uri, ImageLoadingListener listener)  
+			
+				displayImage(String uri, ImageView imageView)
+				displayImage(String uri, ImageView imageView, DisplayImageOptions options)
+				displayImage(String uri, ImageView imageView, DisplayImageOptions options,
+					ImageLoadingListener listener, ImageLoadingProgressListener progressListener) 
+	6. 特殊用法:
+		1. 显示圆形图片.使用该效果,必须显式指定图片的宽高
+
+				DisplayImageOptions options = new DisplayImageOptions.Builder()
+				 		.displayer(new CircleBitmapDisplayer())
+				 		.build();
+		2. 显示圆角图片.使用该效果,必须显式指定图片的宽高
+		
+		        DisplayImageOptions options = new DisplayImageOptions.Builder()
+		                .displayer(new RoundedBitmapDisplayer(90))
+		                .build();
+		3. 显示圆角缩放图片.使用该效果,必须显式指定图片的宽高
+
+		        DisplayImageOptions options = new DisplayImageOptions.Builder()
+		                .displayer(new RoundedVignetteBitmapDisplayer(90,180))
+		                .build();
+		4. 显示渐显图片
+
+		        DisplayImageOptions options = new DisplayImageOptions.Builder()
+		                .displayer(new FadeInBitmapDisplayer(3000))
+		                .build();
